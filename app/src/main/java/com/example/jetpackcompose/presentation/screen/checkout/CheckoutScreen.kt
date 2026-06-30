@@ -19,6 +19,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.jetpackcompose.utils.UiState
@@ -47,6 +51,13 @@ fun CheckoutScreen(
 
     val context = LocalContext.current
     var showSuccessDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.toastMessage.collect { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
 
     LaunchedEffect(checkoutState) {
         if (checkoutState is UiState.Success) {
@@ -57,6 +68,7 @@ fun CheckoutScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Thanh toán", fontWeight = FontWeight.Bold) },
@@ -110,7 +122,12 @@ fun CheckoutScreen(
                     onValueChange = { viewModel.setNote(it) },
                     label = { Text("Ghi chú cho quán") },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 2
+                    minLines = 2,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences,
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Done
+                    )
                 )
             }
 
@@ -270,9 +287,15 @@ fun ShipSection(address: String, distance: Double, shipFee: Long, onAddressChang
             label = { Text("Địa chỉ giao hàng") },
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = { Icon(Icons.Default.LocationOn, null, tint = Color(0xFFFF9800)) },
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Sentences,
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next
+            ),
+            singleLine = true
         )
-        
+
         if (distance > 0) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

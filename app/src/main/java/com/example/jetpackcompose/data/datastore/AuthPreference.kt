@@ -28,9 +28,24 @@ class AuthPreference @Inject constructor(private val context: Context) {
         val GENDER = stringPreferencesKey("gender")
         val ROLE = stringPreferencesKey("role")
         val CART_ITEMS = stringPreferencesKey("cart_items")
+        val ADDRESS = stringPreferencesKey("address")
+        val LATITUDE = stringPreferencesKey("latitude")
+        val LONGITUDE = stringPreferencesKey("longitude")
     }
 
     private val gson = Gson()
+
+    suspend fun saveLocation(address: String, lat: Double, lng: Double) {
+        context.dataStore.edit { prefs ->
+            prefs[ADDRESS] = address
+            prefs[LATITUDE] = lat.toString()
+            prefs[LONGITUDE] = lng.toString()
+        }
+    }
+
+    fun getAddress(): Flow<String?> = context.dataStore.data.map { it[ADDRESS] }
+    fun getLat(): Flow<Double?> = context.dataStore.data.map { it[LATITUDE]?.toDoubleOrNull() }
+    fun getLng(): Flow<Double?> = context.dataStore.data.map { it[LONGITUDE]?.toDoubleOrNull() }
 
     suspend fun saveTokens(accessToken: String, refreshToken: String) {
         context.dataStore.edit { prefs ->

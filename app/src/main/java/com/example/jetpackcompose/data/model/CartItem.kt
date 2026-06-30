@@ -7,6 +7,7 @@ data class CartItem(
     val kitchenArea: String,
     val quantity: Int,
     val price: Long,
+    val status: String = "available",
     val variant: Variant?,
     val toppings: List<Topping>
 ) {

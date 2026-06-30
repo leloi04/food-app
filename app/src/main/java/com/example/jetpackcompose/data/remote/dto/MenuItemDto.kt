@@ -14,6 +14,7 @@ data class MenuItemDto(
     val category: String?,
     val averageRating: Double?,
     val kitchenArea: String?,
+    val status: String?,
     val variants: List<VariantDto>?,
     val toppings: List<ToppingDto>?
 )
@@ -39,6 +40,7 @@ fun MenuItemDto.toDomain() = MenuItem(
     category = category ?: "",
     averageRating = averageRating ?: 0.0,
     kitchenArea = kitchenArea ?: "HOT",
+    status = status ?: "available",
     variants = variants?.map { it.toDomain() } ?: emptyList(),
     toppings = toppings?.map { it.toDomain() } ?: emptyList()
 )

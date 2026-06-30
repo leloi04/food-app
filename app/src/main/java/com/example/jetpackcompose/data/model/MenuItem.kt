@@ -9,6 +9,7 @@ data class MenuItem(
     val category: String,
     val averageRating: Double,
     val kitchenArea: String,
+    val status: String = "available", // "available" or "out_of_stock"
     val variants: List<Variant>,
     val toppings: List<Topping>
 )

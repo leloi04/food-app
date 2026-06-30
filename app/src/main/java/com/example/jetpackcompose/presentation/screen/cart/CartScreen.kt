@@ -17,8 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -201,29 +200,67 @@ fun CartItemCard(
     onEdit: () -> Unit,
     onRemove: () -> Unit
 ) {
+    val isAvailable = item.status == "available"
+    
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isAvailable) Color.White else Color(0xFFF8F9FA)
+        ),
+        elevation = CardDefaults.cardElevation(if (isAvailable) 2.dp else 0.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            AsyncImage(
-                model = Constants.getImageUrl(item.image, "menu"),
-                contentDescription = null,
-                modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Crop
-            )
+        Row(
+            modifier = Modifier
+                .padding(12.dp)
+                .graphicsLayer { alpha = if (isAvailable) 1f else 0.7f },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box {
+                AsyncImage(
+                    model = Constants.getImageUrl(item.image, "menu"),
+                    contentDescription = null,
+                    modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop,
+                    colorFilter = if (!isAvailable) ColorFilter.colorMatrix(ColorMatrix(floatArrayOf(
+                        0.33f, 0.33f, 0.33f, 0f, 0f,
+                        0.33f, 0.33f, 0.33f, 0f, 0f,
+                        0.33f, 0.33f, 0.33f, 0f, 0f,
+                        0f, 0f, 0f, 1f, 0f
+                    ))) else null
+                )
+                if (!isAvailable) {
+                    Box(
+                        modifier = Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.3f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("HẾT", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                    }
+                }
+            }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(item.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1)
+                Text(
+                    item.name, 
+                    fontWeight = FontWeight.Bold, 
+                    fontSize = 16.sp, 
+                    maxLines = 1,
+                    color = if (isAvailable) Color.Black else Color.Gray
+                )
                 if (item.variant != null) {
                     Text("Size: ${item.variant.label}", fontSize = 12.sp, color = Color.Gray)
                 }
                 if (item.toppings.isNotEmpty()) {
                     Text("Toppings: ${item.toppings.joinToString { it.name }}", fontSize = 12.sp, color = Color.Gray, maxLines = 1)
                 }
-                Text("${item.getTotalPrice()}đ", color = Color(0xFFFF9800), fontWeight = FontWeight.Bold)
+                Text(
+                    "${item.getTotalPrice()}đ", 
+                    color = if (isAvailable) Color(0xFFFF9800) else Color.Gray, 
+                    fontWeight = FontWeight.Bold
+                )
+                if (!isAvailable) {
+                    Text("Sản phẩm hiện đã hết hàng", color = Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                }
             }
             
             Column(horizontalAlignment = Alignment.End) {
@@ -232,20 +269,40 @@ fun CartItemCard(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = onEdit, contentPadding = PaddingValues(0.dp), modifier = Modifier.height(30.dp)) {
-                        Text("Sửa", color = Color(0xFFFF9800), fontSize = 14.sp)
+                    if (isAvailable) {
+                        TextButton(onClick = onEdit, contentPadding = PaddingValues(0.dp), modifier = Modifier.height(30.dp)) {
+                            Text("Sửa", color = Color(0xFFFF9800), fontSize = 14.sp)
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.background(Color(0xFFF5F5F5), CircleShape).padding(horizontal = 4.dp)
+                        modifier = Modifier
+                            .background(if (isAvailable) Color(0xFFF5F5F5) else Color(0xFFEEEEEE), CircleShape)
+                            .padding(horizontal = 4.dp)
                     ) {
-                        IconButton(onClick = { onUpdateQuantity(-1) }, modifier = Modifier.size(24.dp)) {
-                            Icon(Icons.Default.Remove, null, modifier = Modifier.size(14.dp), tint = Color.DarkGray)
+                        IconButton(
+                            onClick = { onUpdateQuantity(-1) }, 
+                            modifier = Modifier.size(24.dp),
+                            enabled = isAvailable || item.quantity > 0 // Allow reducing if out of stock, but the requirement says no change. 
+                            // Actually, better to allow removing or reducing. 
+                            // But let's follow "Không được thay đổi số lượng" strictly for increasing.
+                        ) {
+                            Icon(Icons.Default.Remove, null, modifier = Modifier.size(14.dp), tint = if (isAvailable) Color.DarkGray else Color.LightGray)
                         }
-                        Text(item.quantity.toString(), fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 4.dp))
-                        IconButton(onClick = { onUpdateQuantity(1) }, modifier = Modifier.size(24.dp)) {
-                            Icon(Icons.Default.Add, null, modifier = Modifier.size(14.dp), tint = Color.DarkGray)
+                        Text(
+                            item.quantity.toString(), 
+                            fontWeight = FontWeight.Bold, 
+                            fontSize = 14.sp, 
+                            modifier = Modifier.padding(horizontal = 4.dp),
+                            color = if (isAvailable) Color.Black else Color.Gray
+                        )
+                        IconButton(
+                            onClick = { onUpdateQuantity(1) }, 
+                            modifier = Modifier.size(24.dp),
+                            enabled = isAvailable
+                        ) {
+                            Icon(Icons.Default.Add, null, modifier = Modifier.size(14.dp), tint = if (isAvailable) Color.DarkGray else Color.LightGray)
                         }
                     }
                 }

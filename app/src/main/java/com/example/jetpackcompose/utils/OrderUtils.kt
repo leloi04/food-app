@@ -113,6 +113,44 @@ object OrderUtils {
         }
     }
 
+    fun formatTimeAgo(dateTimeString: String?): String {
+        if (dateTimeString == null) return ""
+        return try {
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+            inputFormat.timeZone = TimeZone.getTimeZone("UTC")
+            val date = inputFormat.parse(dateTimeString) ?: return ""
+            val now = Date()
+            val diff = now.time - date.time
+
+            when {
+                diff < 60 * 1000 -> "Vừa xong"
+                diff < 60 * 60 * 1000 -> "${diff / (60 * 1000)} phút trước"
+                diff < 24 * 60 * 60 * 1000 -> "${diff / (60 * 60 * 1000)} giờ trước"
+                diff < 2 * 24 * 60 * 60 * 1000 -> "Hôm qua"
+                else -> {
+                    val outputFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                    outputFormat.format(date)
+                }
+            }
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    fun isEditable(createdAt: String?): Boolean {
+        if (createdAt == null) return false
+        return try {
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+            inputFormat.timeZone = TimeZone.getTimeZone("UTC")
+            val date = inputFormat.parse(createdAt) ?: return false
+            val now = Date()
+            val diff = now.time - date.time
+            diff <= 5 * 60 * 1000 // 5 minutes
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     fun formatTimeOnly(dateTimeString: String?): String {
         if (dateTimeString == null) return "--:--"
         return try {

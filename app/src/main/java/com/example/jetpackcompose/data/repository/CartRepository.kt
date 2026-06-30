@@ -14,6 +14,7 @@ class CartRepository @Inject constructor(
     fun getCartItems(): Flow<List<CartItem>> = authPreference.getCartItems()
 
     suspend fun addToCart(item: CartItem) {
+        if (item.status == "out_of_stock") return
         val currentItems = authPreference.getCartItems().first().toMutableList()
         // If same id, variant and toppings, increase quantity
         val existingIndex = currentItems.indexOfFirst { 
@@ -30,6 +31,7 @@ class CartRepository @Inject constructor(
     }
 
     suspend fun updateQuantity(item: CartItem, newQuantity: Int) {
+        if (item.status == "out_of_stock" && newQuantity > item.quantity) return // Can't increase if out of stock
         val currentItems = authPreference.getCartItems().first().toMutableList()
         val index = currentItems.indexOfFirst { 
             it.id == item.id && it.variant?.id == item.variant?.id && it.toppings == item.toppings 

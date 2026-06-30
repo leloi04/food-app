@@ -1,5 +1,6 @@
 package com.example.jetpackcompose.viewmodel
 
+import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jetpackcompose.data.datastore.AuthPreference
@@ -11,6 +12,7 @@ import com.example.jetpackcompose.data.model.Variant
 import com.example.jetpackcompose.data.remote.dto.UserDto
 import com.example.jetpackcompose.data.repository.CartRepository
 import com.example.jetpackcompose.data.repository.FoodRepository
+import com.example.jetpackcompose.data.repository.LocationRepository
 import com.example.jetpackcompose.utils.Resource
 import com.example.jetpackcompose.utils.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,7 +24,8 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val authPreference: AuthPreference,
     private val foodRepository: FoodRepository,
-    private val cartRepository: CartRepository
+    private val cartRepository: CartRepository,
+    private val locationRepository: LocationRepository
 ) : ViewModel() {
 
     val user = authPreference.userData.stateIn(
@@ -30,6 +33,8 @@ class HomeViewModel @Inject constructor(
         SharingStarted.WhileSubscribed(5000),
         UserDto(null, null, null, null, null, null, null)
     )
+
+    val locationState = locationRepository.getLocationState()
 
     private val _promotionsState = MutableStateFlow<UiState<List<Promotion>>>(UiState.Loading)
     val promotionsState = _promotionsState.asStateFlow()
@@ -41,6 +46,9 @@ class HomeViewModel @Inject constructor(
 
     private val _selectedCategory = MutableStateFlow("All")
     val selectedCategory = _selectedCategory.asStateFlow()
+
+    private val _toastMessage = MutableSharedFlow<String>()
+    val toastMessage = _toastMessage.asSharedFlow()
 
     val filteredMenuItems: StateFlow<UiState<List<MenuItem>>> = combine(
         _allMenuItems, 
@@ -67,6 +75,28 @@ class HomeViewModel @Inject constructor(
         fetchPromotions()
         fetchCategories()
         fetchMenuItems()
+    }
+
+    fun startLocationUpdate() {
+        viewModelScope.launch {
+            locationRepository.startLocationUpdate()
+        }
+    }
+
+    fun checkGpsAndStartLocation(activity: Activity) {
+        locationRepository.checkGpsSettings(activity) {
+            startLocationUpdate()
+        }
+    }
+
+    fun onLocationPermissionDenied() {
+        locationRepository.onPermissionDenied()
+    }
+
+    fun refreshLocation() {
+        viewModelScope.launch {
+            locationRepository.refreshLocation()
+        }
     }
 
     private fun fetchPromotions() {
@@ -102,6 +132,12 @@ class HomeViewModel @Inject constructor(
     }
 
     fun addToCart(item: MenuItem, quantity: Int, variant: Variant?, toppings: List<Topping>) {
+        if (item.status == "out_of_stock") {
+            viewModelScope.launch {
+                _toastMessage.emit("Món ăn hiện đã hết hàng.")
+            }
+            return
+        }
         viewModelScope.launch {
             cartRepository.addToCart(
                 CartItem(
@@ -111,6 +147,7 @@ class HomeViewModel @Inject constructor(
                     kitchenArea = item.kitchenArea,
                     quantity = quantity,
                     price = item.price,
+                    status = item.status,
                     variant = variant,
                     toppings = toppings
                 )

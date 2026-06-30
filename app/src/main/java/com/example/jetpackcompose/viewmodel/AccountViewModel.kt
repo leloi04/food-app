@@ -7,6 +7,7 @@ import com.example.jetpackcompose.data.remote.dto.UpdatePasswordRequest
 import com.example.jetpackcompose.data.remote.dto.UpdateUserRequest
 import com.example.jetpackcompose.data.remote.dto.UserDto
 import com.example.jetpackcompose.data.repository.AuthRepository
+import com.example.jetpackcompose.data.repository.LocationRepository
 import com.example.jetpackcompose.utils.Resource
 import com.example.jetpackcompose.utils.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AccountViewModel @Inject constructor(
     private val authPreference: AuthPreference,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val locationRepository: LocationRepository
 ) : ViewModel() {
 
     val user = authPreference.userData.stateIn(
@@ -25,6 +27,14 @@ class AccountViewModel @Inject constructor(
         SharingStarted.WhileSubscribed(5000),
         UserDto(null, null, null, null, null, null, null)
     )
+
+    val locationState = locationRepository.getLocationState()
+
+    fun refreshLocation() {
+        viewModelScope.launch {
+            locationRepository.refreshLocation()
+        }
+    }
 
     private val _updateProfileState = MutableStateFlow<UiState<UserDto>>(UiState.Idle)
     val updateProfileState = _updateProfileState.asStateFlow()

@@ -1,9 +1,6 @@
 package com.example.jetpackcompose.di
 
-import com.example.jetpackcompose.data.repository.AuthRepository
-import com.example.jetpackcompose.data.repository.AuthRepositoryImpl
-import com.example.jetpackcompose.data.repository.FoodRepository
-import com.example.jetpackcompose.data.repository.FoodRepositoryImpl
+import com.example.jetpackcompose.data.repository.*
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -25,4 +22,16 @@ abstract class RepositoryModule {
     abstract fun bindFoodRepository(
         foodRepositoryImpl: FoodRepositoryImpl
     ): FoodRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindReviewRepository(
+        reviewRepositoryImpl: ReviewRepositoryImpl
+    ): ReviewRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindLocationRepository(
+        locationRepositoryImpl: LocationRepositoryImpl
+    ): LocationRepository
 }

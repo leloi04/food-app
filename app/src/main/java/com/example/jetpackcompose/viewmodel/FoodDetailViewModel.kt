@@ -40,6 +40,9 @@ class FoodDetailViewModel @Inject constructor(
     private val _addToCartEvent = MutableSharedFlow<Boolean>()
     val addToCartEvent = _addToCartEvent.asSharedFlow()
 
+    private val _toastMessage = MutableSharedFlow<String>()
+    val toastMessage = _toastMessage.asSharedFlow()
+
     init {
         fetchMenuItem()
     }
@@ -60,12 +63,26 @@ class FoodDetailViewModel @Inject constructor(
         }.launchIn(viewModelScope)
     }
 
-    fun incrementQuantity() { _quantity.value++ }
-    fun decrementQuantity() { if (_quantity.value > 1) _quantity.value-- }
+    fun incrementQuantity() {
+        val item = (_uiState.value as? UiState.Success)?.data
+        if (item?.status == "out_of_stock") return
+        _quantity.value++
+    }
+    fun decrementQuantity() {
+        val item = (_uiState.value as? UiState.Success)?.data
+        if (item?.status == "out_of_stock") return
+        if (_quantity.value > 1) _quantity.value--
+    }
 
-    fun selectVariant(variant: Variant) { _selectedVariant.value = variant }
+    fun selectVariant(variant: Variant) {
+        val item = (_uiState.value as? UiState.Success)?.data
+        if (item?.status == "out_of_stock") return
+        _selectedVariant.value = variant
+    }
 
     fun toggleTopping(topping: Topping) {
+        val item = (_uiState.value as? UiState.Success)?.data
+        if (item?.status == "out_of_stock") return
         val current = _selectedToppings.value.toMutableList()
         if (current.any { it.id == topping.id }) {
             current.removeAll { it.id == topping.id }
@@ -92,6 +109,12 @@ class FoodDetailViewModel @Inject constructor(
         val state = _uiState.value
         if (state is UiState.Success) {
             val item = state.data
+            if (item.status == "out_of_stock") {
+                viewModelScope.launch {
+                    _toastMessage.emit("Món ăn hiện đã hết hàng.")
+                }
+                return
+            }
             viewModelScope.launch {
                 cartRepository.addToCart(
                     CartItem(
@@ -101,6 +124,7 @@ class FoodDetailViewModel @Inject constructor(
                         kitchenArea = item.kitchenArea,
                         quantity = _quantity.value,
                         price = item.price,
+                        status = item.status,
                         variant = _selectedVariant.value,
                         toppings = _selectedToppings.value
                     )

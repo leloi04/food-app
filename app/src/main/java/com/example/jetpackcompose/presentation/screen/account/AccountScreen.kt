@@ -104,6 +104,8 @@ fun AccountScreen(viewModel: AccountViewModel, onLogout: () -> Unit) {
             Column {
                 ActionItem(icon = Icons.Default.Edit, title = "Chỉnh sửa thông tin") { showEditProfile = true }
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
+                ActionItem(icon = Icons.Default.MyLocation, title = "Làm mới vị trí") { viewModel.refreshLocation() }
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
                 ActionItem(icon = Icons.Default.Lock, title = "Đổi mật khẩu") { showChangePassword = true }
             }
         }
